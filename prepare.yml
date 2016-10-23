@@ -1,0 +1,46 @@
+- hosts: muladev
+  tasks:
+  - name: install support application
+    pkgng: name={{ item }} state=present
+    with_items :
+    - nginx
+    - iocage
+    - py27-virtualenvwrapper
+    - py27-supervisor
+    - bash
+    
+  - name: Check zpool
+    shell: zpool list | grep mula
+    when: ansible_distribution == 'FreeBSD'
+    register: create_zpool
+    ignore_errors: yes
+    
+  - name: Create zpool
+    shell: zpool create mula da1
+    when: "'mula' not in create_zpool.stdout"
+    
+  - name: Enable Zpool for iocage
+    shell: iocage enable mula
+    
+  - name: Config zfs kld
+    sysrc:
+      name: zfs_load
+      state: present
+      value: "YES"
+      dest: /boot/loader.conf
+      
+  - name: Config autoboot_delay
+    sysrc:
+      name: autoboot_delay
+      state: present
+      value: "0"
+      dest: /boot/loader.conf
+    
+  - name: Enable Service
+    service: name={{ item }} enabled=yes state=started
+    with_items :
+        - nginx
+        - supervisord
+        - zfs
+        - iocage
+        
