@@ -1,4 +1,6 @@
 - hosts: muladev
+  vars:
+    zpool_name: mula
   tasks:
   - name: install support application
     pkgng: name={{ item }} state=present
@@ -10,17 +12,17 @@
     - bash
     
   - name: Check zpool
-    shell: zpool list | grep mula
+    shell: zpool list | grep {{ zpool_name }}
     when: ansible_distribution == 'FreeBSD'
     register: create_zpool
     ignore_errors: yes
     
   - name: Create zpool
-    shell: zpool create mula da1
+    shell: zpool create {{ zpool_name }} da1
     when: "'mula' not in create_zpool.stdout"
     
   - name: Enable Zpool for iocage
-    shell: iocage enable mula
+    shell: iocage enable {{ zpool_name }}
     
   - name: Config zfs kld
     sysrc:
