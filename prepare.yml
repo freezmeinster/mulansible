@@ -2,6 +2,22 @@
   vars:
     zpool_name: mula
   tasks:
+  - name: Remove standard pkg conf
+    file: path=/etc/pkg/FreeBSD.conf state=absent
+    
+  - name: reconfig pkg conf
+    blockinfile:
+      dest: /etc/pkg/FreeBSD.conf
+      state: present
+      create: yes
+      block: |
+        FreeBSD: {
+          url: "http://pkg.o-leafs.com/${ABI}/quarterly",
+          mirror_type: "http",
+          fingerprints: "/usr/share/keys/pkg",
+          enabled: yes
+        }
+    
   - name: install support application
     pkgng: name={{ item }} state=present
     with_items :
@@ -18,8 +34,8 @@
     ignore_errors: yes
     
   - name: Create zpool
-    shell: zpool create {{ zpool_name }} da1
-    when: "'mula' not in create_zpool.stdout"
+    shell: zpool create -f {{ zpool_name }} da1
+    when: "'{{ zpool_name }}' not in create_zpool.stdout"
     
   - name: Enable Zpool for iocage
     shell: iocage enable {{ zpool_name }}
